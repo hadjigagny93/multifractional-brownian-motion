@@ -1,13 +1,28 @@
 import numpy as np
 
 class GaussianProcess:
+    """
+    attributes
+    ----------
+    cov_structure: stationnary covariance of multifractional gaussian process
+    n: number of realizations of Y we want to generate
+
+    methods
+    -------
+    get_params: 
+    spectrum: 
+    simulate_gaussian_process:
+    slice_circular:
+    embedding_length:
+    check_symmetric:
+    """
     def __init__(self, cov_structure, process_length=3):
-        
+
         self.cov_structure = cov_structure
         self.n = process_length
 
-    def _get_circular_matrix(self, **kwargs):
-        m = self._embedding_length(n=self.n)
+    def __get_params(self, **kwargs):
+        m = self.__embedding_length(n=self.n)
         if kwargs:
             m = kwargs['embedding_value'] * 2
         # get circular matrix pattern
@@ -17,10 +32,10 @@ class GaussianProcess:
 
     def __spectrum(self):
         """compute eigenvalues and eigenvectors of linear operator"""
-        circular_matrix, m = self._get_circular_matrix()
+        circular_matrix, m = self.__get_params()
         eigenvalues, eigenvectors = np.linalg.eig(circular_matrix)
         while not np.all(eigenvalues > 0):
-            circular_matrix, m = self._get_circular_matrix(embedding_value=m)
+            circular_matrix, m = self.__get_params(embedding_value=m)
             eigenvalues, eigenvectors = np.linalg.eig(circular_matrix)
         return eigenvalues, eigenvectors
     
@@ -44,14 +59,14 @@ class GaussianProcess:
         return matrix
 
     @staticmethod
-    def _embedding_length(n):
+    def __embedding_length(n):
       """for circular embedding matrix calculation
       return_back arg enable increse the power of g in 
       computed eigenvalues are negative"""
       return int(1 + np.log(n - 1) / np.log(2))
 
     @staticmethod 
-    def _check_symmetric(a, tol=1e-8):
+    def __check_symmetric(a, tol=1e-8):
         """return if a given matrix is symetric or not with given confidence
         intervall"""
       return np.all(np.abs(a-a.T) < tol)
@@ -64,7 +79,7 @@ class GaussianProcess:
     def cov_structure(self, new_value):
         if isinstance(new_value, np.ndarray):
             row, col = new_value.shape
-            is_symetric = self._check_symmetric(new_value)
+            is_symetric = self.__check_symmetric(new_value)
             is_square = row == col
             if is_square and is_symetric:
                 self.__cov_structure = new_value
