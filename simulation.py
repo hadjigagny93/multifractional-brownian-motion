@@ -9,12 +9,12 @@ class GaussianProcess:
 
     methods
     -------
-    get_params: 
-    spectrum: 
-    simulate_gaussian_process:
-    slice_circular:
-    embedding_length:
-    check_symmetric:
+    get_params: get circular matrix and integer parameter m 
+    spectrum: eigenvalues of circular matrix
+    simulate_gaussian_process: main function
+    slice_circular: generate circular matrix
+    embedding_length: m parameter 
+    check_symmetric: return True if arg is a symetric matrix
     """
     def __init__(self, cov_structure, process_length=3):
 
@@ -22,9 +22,11 @@ class GaussianProcess:
         self.n = process_length
 
     def __get_params(self, **kwargs):
-        m = self.__embedding_length(n=self.n)
+        
         if kwargs:
             m = kwargs['embedding_value'] * 2
+        else:
+            m = self.__embedding_length(n=self.n)
         # get circular matrix pattern
         gamma0 = self.cov_structure[0,:] 
         theta0 = np.array([gamma0[k] for k in range(m//2 + 1)] + [gamma0[m-k] for k in range(m// 2 + 1, m)])
