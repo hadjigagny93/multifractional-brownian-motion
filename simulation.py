@@ -10,7 +10,7 @@ class Cov:
         return (np.power(np.abs(s - 1), 2 * self.h) + np.power(np.abs(s + 1), 2 * self.h) - 2 * np.power(np.abs(s), 2 * self.h))/2
 
 class Structure:
-    def __init__(self, sample_size=100):
+    def __init__(self, sample_size=1000):
         self.sample_size = sample_size
     
     def __str__(self):
@@ -64,7 +64,6 @@ class GaussianProcess:
         eigenvalues, eigenvectors = np.linalg.eig(circular_matrix)
 
         while not np.all(eigenvalues >= 0):
-            print('not sdp')
             circular_matrix, m = self.__get_params(embedding_value=m)
             eigenvalues, eigenvectors = np.linalg.eig(circular_matrix)
 
@@ -73,22 +72,15 @@ class GaussianProcess:
     def simulate_gaussian_process(self):
         """simulate the gaussian process"""
         eigenvalues, Q = self.__spectrum()
-        print('get_eigenvalues')
         gamma = np.diag(np.sqrt(eigenvalues))
-        print('get_gamma')
         random_normal = np.random.normal(0, 1, gamma.shape[0]).reshape(-1, 1)
         a = gamma.dot(Q.T).dot(random_normal).flatten()
-        print('get_multiply')
         return np.real(np.fft.fft(a)[:self.n]) 
 
     def generateFBM(self, delta, gp):
-        fbm = []
         coeff = np.power(delta, self.cov_instance.h)
-        for i in range(self.n):
-            fbm.append(coeff * gp[:i+1].sum())
+        return np.array([coeff * gp[:i+1].sum() for i in range(self.n)])
 
-        return np.array(fbm)
-         
     @staticmethod
     def __slice_circular(vector):
         """ generate circular matrix from a list pattern as first row"""
@@ -129,7 +121,7 @@ class GaussianProcess:
             if is_square and is_symetric:
                 self.__cov_structure = new_value
             else:
-                raise('Try to give well define Matrix -- SPD')
+                raise('Give well define Matrix -- SPD')
         else:
             raise('Except ndarray object')
 
