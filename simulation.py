@@ -10,7 +10,7 @@ class Cov:
         return (np.power(np.abs(s - 1), 2 * self.h) + np.power(np.abs(s + 1), 2 * self.h) - 2 * np.power(np.abs(s), 2 * self.h))/2
 
 class Structure:
-    def __init__(self, sample_size=1000):
+    def __init__(self, sample_size=10):
         self.sample_size = sample_size
     
     def __str__(self):
@@ -32,6 +32,7 @@ class GaussianProcess:
     ----------
     cov_structure: stationnary covariance of multifractional gaussian process
     n: number of realizations of Y we want to generate
+    cov_instance: pattern vector generating covariance matrix 
     methods
     -------
     get_params: get circular matrix and integer parameter m 
@@ -51,7 +52,6 @@ class GaussianProcess:
             m = kwargs['embedding_value'] * 2
         else:
             m = self.__embedding_length(n=self.n)
-
         # get circular matrix pattern
         gamma0 = self.cov_structure[0,:] 
         theta0 = np.array([self.cov_instance.gamma(k) for k in range(m // 2 + 1)] + [self.cov_instance.gamma(k) for k in range(m // 2 + 1 , m)])
@@ -66,7 +66,6 @@ class GaussianProcess:
         while not np.all(eigenvalues >= 0):
             circular_matrix, m = self.__get_params(embedding_value=m)
             eigenvalues, eigenvectors = np.linalg.eig(circular_matrix)
-
         return eigenvalues, eigenvectors
     
     def simulate_gaussian_process(self):
@@ -125,3 +124,52 @@ class GaussianProcess:
         else:
             raise('Except ndarray object')
 
+
+class MFBClass:
+    def __init__(self, **kwargs):
+        self.hurst_params = None 
+        if kwargs:
+            self.method = kwargs.get('method')
+            self.size = kwargs.get('size')
+            self.hurst_params = kwargs.get('params')
+        else:
+            raise('give params or func')
+
+    @staticmethod
+    def linear_hurst(t):
+        return t
+    
+    @staticmethod
+    def logistic_hurst(t):
+        return 0.3 + 0.3 / (1 + np.exp(-100 * (t - 0.7)))
+
+    @staticmethod
+    def periodic_hurst(t):
+        return 0.5 + 0.49 * np.sin(4 * np.pi * t)
+
+    def simulate(self):
+        if self.hurst_params is None:
+            if not isinstance(self.size, int):
+                raise('size parameter must be int')
+
+            grid = np.linspace(0.001, 0.99, self.size)
+            if self.method == 'linear':
+                hurst_func = np.vectorize(self.linear_hurst)
+            elif self.method == 'logistic':
+                hurst_func = np.vectorize(self.logistic_hurst)
+            elif self.method == 'periodic':
+                hurst_func = np.vectorize(self.periodic_hurst)
+            else:
+                raise('parameter value given does not fit with any default value')
+            self.hurst_params = hurst_func(grid)
+
+        mfb_vect = []
+        for hurst_param in self.hurst_params:
+            cis = Cov(h=hurst_param)
+            matrix = Structure().matrix(cis)
+            simu = GaussianProcess(matrix, cis)
+            gp = simu.simulate_gaussian_process()
+            brm = simu.generateFBM(delta=10, gp=gp)
+            mfb_vect.append(brm)
+        return mfb_vect
+            
