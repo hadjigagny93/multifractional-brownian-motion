@@ -126,6 +126,17 @@ class GaussianProcess:
 
 
 class MFBClass:
+    """Simuate Multifractional Brownian motion
+    attributes:
+    -----------
+    method: define hurst function 
+    size: m parameter 
+    hurst_parames: hurst vector in method & size are set to nul
+
+    method
+    -------
+    simulate: main program 
+    """
     def __init__(self, **kwargs):
         self.hurst_params = None 
         if kwargs:
